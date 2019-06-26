@@ -33,9 +33,72 @@ trimmed_data <- AASDM_data[, c(2:27)]
 res <- cor(trimmed_data)
 round(res, 2)
 
+important_data <- AASDM_data[,c(16:27)]
 
+library(xtable)
 library(Hmisc)
-res2 <- rcorr(as.matrix(trimmed_data))
+icor<-round(cor(important_data),2)
+upper<-icor
+upper[upper.tri(icor)]<-""
+upper<-as.data.frame(upper)
+print(xtable(upper), type="html")
+# x is a matrix containing the data
+# method : correlation method. "pearson"" or "spearman"" is supported
+# removeTriangle : remove upper or lower triangle
+# results :  if "html" or "latex"
+# the results will be displayed in html or latex format
+corstars <-function(x, method=c("pearson", "spearman"), removeTriangle=c("upper", "lower"),
+                    result=c("none", "html", "latex")){
+  #Compute correlation matrix
+  require(Hmisc)
+  x <- as.matrix(x)
+  correlation_matrix<-rcorr(x, type=method[1])
+  R <- correlation_matrix$r # Matrix of correlation coeficients
+  p <- correlation_matrix$P # Matrix of p-value 
+  
+  ## Define notions for significance levels; spacing is important.
+  mystars <- ifelse(p < .0001, "****", ifelse(p < .001, "*** ", ifelse(p < .01, "**  ", ifelse(p < .05, "*   ", "    "))))
+  
+  ## trunctuate the correlation matrix to two decimal
+  R <- format(round(cbind(rep(-1.11, ncol(x)), R), 2))[,-1]
+  
+  ## build a new matrix that includes the correlations with their apropriate stars
+  Rnew <- matrix(paste(R, mystars, sep=""), ncol=ncol(x))
+  diag(Rnew) <- paste(diag(R), " ", sep="")
+  rownames(Rnew) <- colnames(x)
+  colnames(Rnew) <- paste(colnames(x), "", sep="")
+  
+  ## remove upper triangle of correlation matrix
+  if(removeTriangle[1]=="upper"){
+    Rnew <- as.matrix(Rnew)
+    Rnew[upper.tri(Rnew, diag = TRUE)] <- ""
+    Rnew <- as.data.frame(Rnew)
+  }
+  
+  ## remove lower triangle of correlation matrix
+  else if(removeTriangle[1]=="lower"){
+    Rnew <- as.matrix(Rnew)
+    Rnew[lower.tri(Rnew, diag = TRUE)] <- ""
+    Rnew <- as.data.frame(Rnew)
+  }
+  
+  ## remove last column and return the correlation matrix
+  Rnew <- cbind(Rnew[1:length(Rnew)-1])
+  if (result[1]=="none") return(Rnew)
+  else{
+    if(result[1]=="html") print(xtable(Rnew), type="html")
+    else print(xtable(Rnew), type="latex") 
+  }
+} 
+
+
+
+corstars(icor, result="html")
+
+icorBIG<-round(cor(trimmed_data),2)
+corstars(icorBIG, result="html")
+
+res2 <- rcorr(as.matrix(important_data))
 res2
 
 
@@ -66,6 +129,83 @@ linReg_GB1 <- lm(godBelief ~ PRESENCE_OF_A + FIRST_TRAUMA +	FREQ_OF_TRAUMA +
                    ENV_RELIGIOUS_IMPORTANCE +	fact_resistance +	cognitive_inhibition +
                    factual_information +	ontological_confusion +	analytical_thinking_style + supernaturalBelief, data=trimmed_data)
 summary(linReg_GB1)
+
+linReg_GB1_1 <- lm(godBelief ~ PRESENCE_OF_A + FIRST_TRAUMA +	FREQ_OF_TRAUMA +
+                   INTELLIGENCE +	INIT_COG_INHIBITION +	COG_INHIB_DEPLETION +
+                   INIT_RELIGIOUS_INFO +	FAMILY_RELIGIOUS_IMPORTANCE +	INIT_FACT_INFO +
+                   EVENT_INTENSITY +	START_UG_AGE +
+                   START_PG_AGE +	END_UG_AGE +	STUDYTOPIC +	TRADITION_SELF_CONT +
+                   INTUITIVE_THINKING_STYLE +	COGNITIVE_REFLECTION +	NEED_FOR_COGNITION +
+                   ENV_RELIGIOUS_IMPORTANCE +	fact_resistance +	cognitive_inhibition +
+                   factual_information +	ontological_confusion +	supernaturalBelief, data=trimmed_data)
+summary(linReg_GB1_1)
+
+linReg_GB1_t <- lm(godBelief ~ INTELLIGENCE +	INIT_COG_INHIBITION +	COG_INHIB_DEPLETION +
+                     INIT_RELIGIOUS_INFO +	FAMILY_RELIGIOUS_IMPORTANCE +	INIT_FACT_INFO +
+                     TRADITION_SELF_CONT + INTUITIVE_THINKING_STYLE +	COGNITIVE_REFLECTION +	NEED_FOR_COGNITION +
+                     ENV_RELIGIOUS_IMPORTANCE +	fact_resistance +	cognitive_inhibition +
+                     ontological_confusion, data=trimmed_data)
+summary(linReg_GB1_t)
+
+linReg_GB1_st <- lm(godBelief ~ INTELLIGENCE +	TRADITION_SELF_CONT + INTUITIVE_THINKING_STYLE +	COGNITIVE_REFLECTION +	NEED_FOR_COGNITION +
+                     fact_resistance +	cognitive_inhibition +
+                     ontological_confusion, data=trimmed_data)
+summary(linReg_GB1_st)
+linReg_SB1_st <- lm(supernaturalBelief ~ INTELLIGENCE +	TRADITION_SELF_CONT + INTUITIVE_THINKING_STYLE +	COGNITIVE_REFLECTION +	NEED_FOR_COGNITION +
+                      fact_resistance +	cognitive_inhibition +
+                      ontological_confusion, data=trimmed_data)
+summary(linReg_SB1_st)
+linReg_SB1_st_sc <- lm(scale(supernaturalBelief) ~ scale(INTELLIGENCE) + 
+                        scale(TRADITION_SELF_CONT) + 
+                        scale(INTUITIVE_THINKING_STYLE) +	
+                        scale(COGNITIVE_REFLECTION) +	
+                        scale(NEED_FOR_COGNITION) +
+                        scale(fact_resistance) +	
+                        scale(cognitive_inhibition) +
+                        scale(ontological_confusion), data=trimmed_data)
+summary(linReg_SB1_st_sc)
+linReg_GB1_st_sc <- lm(scale(godBelief) ~ scale(INTELLIGENCE) + 
+                         scale(TRADITION_SELF_CONT) + 
+                         scale(INTUITIVE_THINKING_STYLE) +	
+                         scale(COGNITIVE_REFLECTION) +	
+                         scale(NEED_FOR_COGNITION) +
+                         scale(fact_resistance) +	
+                         scale(cognitive_inhibition) +
+                         scale(ontological_confusion), data=trimmed_data)
+summary(linReg_GB1_st_sc)
+linReg_cog_ont <- lm(cognitive_inhibition ~ ontological_confusion, data=trimmed_data)
+summary(linReg_cog_ont)
+
+#get standardized betas
+library("QuantPsyc")
+betas <- lm.beta(linReg_GB1_st)
+
+
+
+
+
+# check for mediation
+library(lavaan)
+
+modelm <- '
+# direct effect
+godBelief ~ c*cognitive_inhibition
+
+# mediators
+ontological_confusion ~ a*cognitive_inhibition
+godBelief ~ b*ontological_confusion
+
+# indirect effects
+ab := a*b
+
+# total effect
+total := c+(a*b)
+'
+fit1 <- sem(modelm, se = "bootstrap", estimator = "GLS", data= trimmed_data)
+summary(fit1)
+# now visualize the data
+library("semPlot")
+semPaths(fit1,"std",edge.label.cex=0.5, curvePivot = TRUE)
 
 linReg_GB2 <- lm(godBelief ~ PRESENCE_OF_A + FIRST_TRAUMA +	FREQ_OF_TRAUMA +
                    INTELLIGENCE +	INIT_COG_INHIBITION +	COG_INHIB_DEPLETION +
